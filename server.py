@@ -1,6 +1,6 @@
 import socket
 import threading
-from rsa import RSA, XOR
+from encription import RSA, XOR
 import hashlib
 
 class Server:
@@ -46,9 +46,12 @@ class Server:
         for client in self.clients:
 
             # encrypt the message
-
+            msg_hash = hashlib.sha3_512(msg.encode('utf-8')).hexdigest()
             encrypted_msg = XOR.encrypt(msg, self.secret_key)
-            client.send(encrypted_msg.encode())
+
+            both = msg_hash + '||' + encrypted_msg
+
+            client.send(both.encode())
 
     def handle_client(self, c: socket, addr):
         while True:

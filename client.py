@@ -1,6 +1,8 @@
 import socket
 import threading
-from rsa import RSA, XOR
+from encription import RSA, XOR
+import hashlib
+import random
 
 class Client:
     def __init__(self, server_ip: str, port: int, username: str) -> None:
@@ -42,21 +44,36 @@ class Client:
             if not message:
                 break
 
+            try:
+                received_hash, message = message.split('||')
+            except ValueError:
+                print('[ERROR] The recieved message had an error')
+                continue
+
             # decrypt message with the secrete key
             decrypted_message = XOR.decrypt(message, self.secret_key)
-            print(decrypted_message)
+            calculated_hash = hashlib.sha3_512(decrypted_message.encode('utf-8')).hexdigest()
+
+            if calculated_hash == received_hash:
+                print(decrypted_message)
+            else:
+                print('[ERROR] The recieved message had an error')
 
 
     def write_handler(self):
         while True:
             message = input()
             msg = f"[{self.username}]: {message}"
+            msg_hash = hashlib.sha3_512(msg.encode('utf-8')).hexdigest()
 
             # encrypt message with the secrete key
 
             encrypted_message = XOR.encrypt(msg, self.secret_key)
-            self.s.send(encrypted_message.encode())
+            both = msg_hash + '||' + encrypted_message
+            self.s.send(both.encode())
 
 if __name__ == "__main__":
-    cl = Client("127.0.0.1", 9001, "b_g")
+    NAMES = ['ivan', 'marti', 'kely', 'ben', 'kate', 'julie']
+    name = random.choice(NAMES)
+    cl = Client("127.0.0.1", 9001, name)
     cl.init_connection()
